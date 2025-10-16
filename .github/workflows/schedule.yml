@@ -10,10 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
+
+      - name: Install deps
+        run: pip install -r requirements.txt
 
       - name: Crawl audit
         run: python tasks/crawl_audit.py
@@ -30,7 +33,14 @@ jobs:
         shell: bash
         run: |
           if [[ -n "${SFTP_HOST}" && -n "${SFTP_USER}" && -n "${SFTP_PASS}" ]]; then
-            python -c 'import os; from utils.sftp import sftp_upload; local="reports/sitemap.xml"; remote="/home/z09esrwccxu0/public_html/sitemap.xml"; print("Uploading", local, "to", remote); sftp_upload(local, remote)'
+            python - <<PY
+from utils.sftp import sftp_upload
+local = "reports/sitemap.xml"
+remote = "/home/z09esrwccxu0/public_html/sitemap.xml"  # <-- change this
+print("Uploading", local, "to", remote)
+sftp_upload(local, remote)
+print("Sitemap uploaded.")
+PY
           else
             echo "SFTP secrets not set; skipping upload."
           fi
@@ -38,10 +48,8 @@ jobs:
       - name: Ping Google/Bing
         shell: bash
         run: |
-          python -c 'import requests; sm="https://www.packntec.com/sitemap.xml"; 
-for host in ("https://www.google.com/ping","https://www.bing.com/ping"):
-    r=requests.get(host, params={"sitemap": sm}, timeout=20)
-    print(host, r.status_code)'
+          curl -s -o /dev/null -w "Google ping: %{http_code}\n" "https://www.google.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
+          curl -s -o /dev/null -w "Bing ping:   %{http_code}\n" "https://www.bing.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
 
       - name: Upload reports artifact
         uses: actions/upload-artifact@v4
