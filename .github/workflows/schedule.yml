@@ -1,9 +1,9 @@
 name: marketing-automation
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "15 14 * * *"   # daily at 14:15 UTC (07:15 PT, your timezone)
-  workflow_dispatch:         # allows manual “Run workflow” button
+    - cron: "15 14 * * *"  # daily 14:15 UTC
 
 jobs:
   run:
@@ -14,26 +14,36 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - name: Run tasks
+
+      - name: Crawl audit
+        run: python tasks/crawl_audit.py
+
+      - name: Build sitemap
+        run: python tasks/sitemap_build.py
+
+      - name: Upload sitemap via SFTP (if secrets present)
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
+        shell: bash
         run: |
-          python tasks/crawl_audit.py
-          python tasks/sitemap_build.py
-          python - <<'PY'
-from utils.sftp import sftp_upload
-sftp_upload('reports/sitemap.xml', '/home/z09esrwccxu0/public_html/sitemap.xml')
-PY
-          python - <<'PY'
-import requests
+          if [[ -n "${SFTP_HOST}" && -n "${SFTP_USER}" && -n "${SFTP_PASS}" ]]; then
+            python -c 'import os; from utils.sftp import sftp_upload; local="reports/sitemap.xml"; remote="/home/z09esrwccxu0/public_html/sitemap.xml"; print("Uploading", local, "to", remote); sftp_upload(local, remote)'
+          else
+            echo "SFTP secrets not set; skipping upload."
+          fi
+
+      - name: Ping Google/Bing
+        shell: bash
+        run: |
+          python -c 'import requests; sm="https://www.packntec.com/sitemap.xml"; 
 for host in ("https://www.google.com/ping","https://www.bing.com/ping"):
-    r = requests.get(host, params={"sitemap": "https://www.packntec.com/sitemap.xml"}, timeout=20)
-    print(host, r.status_code)
-PY
-      - name: Upload reports
+    r=requests.get(host, params={"sitemap": sm}, timeout=20)
+    print(host, r.status_code)'
+
+      - name: Upload reports artifact
         uses: actions/upload-artifact@v4
         with:
           name: reports
