@@ -1,0 +1,40 @@
+name: marketing-automation
+
+on:
+  schedule:
+    - cron: "15 14 * * *"   # daily at 14:15 UTC (07:15 PT, your timezone)
+  workflow_dispatch:         # allows manual “Run workflow” button
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Run tasks
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASS: ${{ secrets.SFTP_PASS }}
+        run: |
+          python tasks/crawl_audit.py
+          python tasks/sitemap_build.py
+          python - <<'PY'
+from utils.sftp import sftp_upload
+sftp_upload('reports/sitemap.xml', '/home/USER/public_html/sitemap.xml')
+PY
+          python - <<'PY'
+import requests
+for host in ("https://www.google.com/ping","https://www.bing.com/ping"):
+    r = requests.get(host, params={"sitemap": "https://www.packntec.com/sitemap.xml"}, timeout=20)
+    print(host, r.status_code)
+PY
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports/**
