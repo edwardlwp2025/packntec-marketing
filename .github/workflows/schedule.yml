@@ -25,7 +25,7 @@ jobs:
           python tasks/sitemap_build.py
           python - <<'PY'
 from utils.sftp import sftp_upload
-sftp_upload('reports/sitemap.xml', '/home/USER/public_html/sitemap.xml')
+sftp_upload('reports/sitemap.xml', '/home/z09esrwccxu0/public_html/sitemap.xml')
 PY
           python - <<'PY'
 import requests
