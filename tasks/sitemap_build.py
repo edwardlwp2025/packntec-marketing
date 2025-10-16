@@ -2,15 +2,15 @@
 from pathlib import Path
 from time import strftime
 
-DOMAIN = "https://www.packntec.com"
-URL_LIST = Path("reports/urls.txt")  # created by crawl_audit.py
+URL_LIST = Path("reports/urls.txt")
 OUT = Path("reports/sitemap.xml")
 
-def run():
+def main():
+    urls = []
     if URL_LIST.exists():
         urls = [u.strip() for u in URL_LIST.read_text(encoding="utf-8").splitlines() if u.strip()]
-    else:
-        urls = [f"{DOMAIN}/"]
+    if not urls:
+        urls = ["https://www.packntec.com/"]
 
     today = strftime("%Y-%m-%d")
     items = "\n".join(
@@ -22,6 +22,7 @@ def run():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(xml, encoding="utf-8")
     print(f"Wrote {OUT} with {len(urls)} URLs")
+    return 0
 
 if __name__ == "__main__":
-    run()
+    raise SystemExit(main())
