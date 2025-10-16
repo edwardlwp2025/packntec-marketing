@@ -1,57 +1,81 @@
 # tasks/crawl_audit.py
-import pandas as pd, requests, lxml.html as LH
-from urllib.parse import urljoin
+import re, requests, pandas as pd, lxml.html as LH
+from urllib.parse import urljoin, urlparse
+from collections import deque
+from pathlib import Path
 
-PAGES = [
-    "https://www.packntec.com/",         # always safe
-    "https://www.packntec.com/contact-us",  # guess; OK if 404 (we log it)
-    # add more real URLs later (About, Products, etc.)
-]
+START = "https://www.packntec.com/"
+MAX_PAGES = 40  # keep it small to start
+UA = {'User-Agent': 'packntec-marketing-bot/1.0 (+site audit)'}
+SKIP_EXT = re.compile(r"\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|avi|pdf|zip|rar|7z|docx?|pptx?|xlsx?)$", re.I)
 
-UA = {'User-Agent': 'packntec-bot/1.0 (+site audit)'}
-
-def fetch(url):
+def fetch_html(url):
     try:
         r = requests.get(url, timeout=20, headers=UA, allow_redirects=True)
-        return r.text if r.status_code < 400 else "", r.status_code
+        ct = r.headers.get("Content-Type","").lower()
+        if r.status_code < 400 and "text/html" in ct:
+            return r.text, r.status_code
+        return "", r.status_code
     except Exception as e:
         return "", f"ERR:{type(e).__name__}"
 
 def audit(url):
-    html, status = fetch(url)
+    html, status = fetch_html(url)
     title = h1 = desc = canon = ""
     broken = 0
-
     if isinstance(status, int) and status < 400 and html:
         doc  = LH.fromstring(html)
         title = (doc.xpath('//title/text()') or [''])[0].strip()
-        h1    = (doc.xpath('//h1/text()') or [''])[0].strip()
+        h1    = (doc.xpath('//h1//text()') or [''])[0].strip()
         meta  = doc.xpath("//meta[translate(@name,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='description']/@content")
-        desc  = meta[0].strip() if meta else ''
-        canon = (doc.xpath("//link[@rel='canonical']/@href') or [''])[0]
-
-        # check internal links quickly
-        for href in doc.xpath("//a/@href"):
-            if href.startswith(('#','mailto:','tel:')): 
+        desc  = (meta[0] if meta else '').strip()
+        can   = doc.xpath("//link[@rel='canonical']/@href")
+        canon = can[0].strip() if can else ""
+        # quick internal link check
+        hrefs = [urljoin(url, h) for h in doc.xpath("//a/@href") if h and not h.startswith(('#','mailto:','tel:'))]
+        for h in hrefs[:50]:
+            if SKIP_EXT.search(h): 
                 continue
-            test = urljoin(url, href)
             try:
-                rr = requests.head(test, timeout=10, allow_redirects=True)
+                rr = requests.head(h, timeout=10, allow_redirects=True)
                 if rr.status_code >= 400: broken += 1
             except:
                 broken += 1
+    return dict(url=url, http_status=status, title=title, h1=h1,
+                meta_description=desc, canonical=canon, broken_links=broken)
 
-    return dict(
-        url=url, http_status=status,
-        title=title, h1=h1, meta_description=desc,
-        canonical=canon, broken_links=broken
-    )
+def discover(start):
+    seen, out = set(), []
+    q = deque([start])
+    host = urlparse(start).netloc
+    while q and len(out) < MAX_PAGES:
+        url = q.popleft()
+        if url in seen: 
+            continue
+        seen.add(url)
+        if SKIP_EXT.search(url):  # skip media/docs
+            continue
+        html, status = fetch_html(url)
+        out.append(url)
+        if isinstance(status, int) and status < 400 and html:
+            doc = LH.fromstring(html)
+            for h in doc.xpath("//a/@href"):
+                if not h or h.startswith(('#','mailto:','tel:')): 
+                    continue
+                u = urljoin(url, h)
+                p = urlparse(u)
+                if p.netloc == host and u not in seen and not SKIP_EXT.search(u):
+                    q.append(u)
+    return out
 
-def run(out_csv="reports/seo_audit.csv"):
-    rows = [audit(u) for u in PAGES]
-    df = pd.DataFrame(rows)
-    df.to_csv(out_csv, index=False)
-    print(f"Wrote {out_csv}")
+def run():
+    urls = discover(START)
+    # save url list for the sitemap builder
+    Path("reports").mkdir(parents=True, exist_ok=True)
+    Path("reports/urls.txt").write_text("\n".join(urls), encoding="utf-8")
+    # audit
+    rows = [audit(u) for u in urls]
+    pd.DataFrame(rows).to_csv("reports/seo_audit.csv", index=False)
+    print(f"Crawled {len(urls)} pages. Wrote reports/seo_audit.csv and reports/urls.txt")
 
-if __name__ == "__main__":
-    run()
+if __name__ =
