@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           if [[ -n "${SFTP_HOST}" && -n "${SFTP_USER}" && -n "${SFTP_PASS}" ]]; then
-            python - <<PY
+            python - <<'PY'
 from utils.sftp import sftp_upload
 local = "reports/sitemap.xml"
 remote = "/home/z09esrwccxu0/public_html/sitemap.xml"  # <-- change this
