@@ -30,7 +30,7 @@ jobs:
          SFTP_PORT: ${{ secrets.SFTP_PORT }}
          SFTP_USER: ${{ secrets.SFTP_USER }}
          SFTP_PASS: ${{ secrets.SFTP_PASS }}
-         REMOTE_SITEMAP_PATH: /home/your_cpanel_user/public_html/sitemap.xml
+         REMOTE_SITEMAP_PATH: /home/z09esrwccxu0/public_html/sitemap.xml
         run: python tasks/upload_sitemap.py
 
       - name: Ping Google/Bing
