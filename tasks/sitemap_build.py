@@ -1,28 +1,27 @@
 # tasks/sitemap_build.py
-import time
 from pathlib import Path
+from time import strftime
 
 DOMAIN = "https://www.packntec.com"
-OUT    = Path("reports/sitemap.xml")
-
-URLS = [
-    f"{DOMAIN}/",
-    f"{DOMAIN}/products",
-    f"{DOMAIN}/contact-us",
-    # TODO: add more product/category URLs here
-]
+URL_LIST = Path("reports/urls.txt")  # created by crawl_audit.py
+OUT = Path("reports/sitemap.xml")
 
 def run():
-    now = time.strftime("%Y-%m-%d")
+    if URL_LIST.exists():
+        urls = [u.strip() for u in URL_LIST.read_text(encoding="utf-8").splitlines() if u.strip()]
+    else:
+        urls = [f"{DOMAIN}/"]
+
+    today = strftime("%Y-%m-%d")
     items = "\n".join(
-        f"<url><loc>{u}</loc><lastmod>{now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>"
-        for u in URLS
+        f"<url><loc>{u}</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>"
+        for u in urls
     )
     xml = f'<?xml version="1.0" encoding="UTF-8"?>\n' \
           f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{items}\n</urlset>\n'
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(xml, encoding="utf-8")
-    print(f"Wrote {OUT}")
+    print(f"Wrote {OUT} with {len(urls)} URLs")
 
 if __name__ == "__main__":
     run()
