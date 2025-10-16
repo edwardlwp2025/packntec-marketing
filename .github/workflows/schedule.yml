@@ -39,7 +39,9 @@ jobs:
           curl -s -o /dev/null -w "Bing ping:   %{http_code}\n" "https://www.bing.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
 
       - name: Upload reports artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reports
           path: reports/**
+
