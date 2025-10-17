@@ -3,7 +3,7 @@ import os
 import paramiko  # installed via requirements.txt
 
 LOCAL  = "reports/sitemap.xml"
-REMOTE = os.environ.get("REMOTE_SITEMAP_PATH", "/home/USER/public_html/sitemap.xml")  # override in workflow
+REMOTE = os.environ.get("REMOTE_SITEMAP_PATH", "/home/z09esrwccxu0/public_html/sitemap.xml")  # override in workflow
 
 def sftp_upload(local_path: str, remote_path: str):
     host = os.environ["SFTP_HOST"]
