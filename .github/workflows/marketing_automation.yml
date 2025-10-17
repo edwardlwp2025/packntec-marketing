@@ -27,9 +27,9 @@ jobs:
 
       - name: Upload sitemap via FTPS
         env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_HOST: ftp.packntec.com
           FTP_PORT: 21
-          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_USER: ftppublic@packntec.com
           FTP_PASS: ${{ secrets.FTP_PASS }}
           REMOTE_SITEMAP_PATH: /public_html/sitemap.xml
         run: python tasks/upload_sitemap_ftps.py
