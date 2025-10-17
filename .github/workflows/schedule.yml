@@ -25,14 +25,14 @@ jobs:
       - name: Build sitemap
         run: python tasks/sitemap_build.py
 
-      - name: Upload sitemap via SFTP (if secrets present)
+      - name: Upload sitemap via FTPS
         env:
-         SFTP_HOST: ${{ secrets.SFTP_HOST }}
-         SFTP_PORT: ${{ secrets.SFTP_PORT }}
-         SFTP_USER: ${{ secrets.SFTP_USER }}
-         SFTP_PASS: ${{ secrets.SFTP_PASS }}
-         REMOTE_SITEMAP_PATH: /home/z09esrwccxu0/public_html/sitemap.xml
-        run: python tasks/upload_sitemap.py
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          REMOTE_SITEMAP_PATH: /public_html/sitemap.xml   # adjust if your root differs
+          run: python tasks/upload_sitemap_ftps.py
 
       - name: Ping Google/Bing
         run: |
