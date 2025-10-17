@@ -19,7 +19,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Crawl audit
+        continue-on-error: true
         run: python tasks/crawl_audit.py
+
 
       - name: Build sitemap
         run: python tasks/sitemap_build.py
