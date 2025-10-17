@@ -31,17 +31,20 @@ jobs:
           FTP_PORT: ${{ secrets.FTP_PORT }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
-          REMOTE_SITEMAP_PATH: /public_html/sitemap.xml   # adjust if your root differs
+          REMOTE_SITEMAP_PATH: /public_html/sitemap.xml  # adjust if your root differs
         run: python tasks/upload_sitemap_ftps.py
 
       - name: Ping Google/Bing
         run: |
           curl -s -o /dev/null -w "Google ping: %{http_code}\n" "https://www.google.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
           curl -s -o /dev/null -w "Bing ping:   %{http_code}\n" "https://www.bing.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
-      - name: Show uploader file head
+
+      # (Optional) Debug: show the FTPS uploader file; won't fail the run if missing
+      - name: Show FTPS uploader file head
+        continue-on-error: true
         run: |
-           echo "---- tasks/upload_sitemap.py (first 20 lines) ----"
-           sed -n '1,20p' tasks/upload_sitemap.py
+          echo "---- tasks/upload_sitemap_ftps.py (first 20 lines) ----"
+          sed -n '1,20p' tasks/upload_sitemap_ftps.py
 
       - name: Upload reports artifact
         if: always()
@@ -49,4 +52,3 @@ jobs:
         with:
           name: reports
           path: reports/**
-
