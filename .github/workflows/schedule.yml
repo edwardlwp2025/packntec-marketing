@@ -22,7 +22,6 @@ jobs:
         continue-on-error: true
         run: python tasks/crawl_audit.py
 
-
       - name: Build sitemap
         run: python tasks/sitemap_build.py
 
@@ -39,6 +38,10 @@ jobs:
         run: |
           curl -s -o /dev/null -w "Google ping: %{http_code}\n" "https://www.google.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
           curl -s -o /dev/null -w "Bing ping:   %{http_code}\n" "https://www.bing.com/ping?sitemap=https://www.packntec.com/sitemap.xml"
+      - name: Show uploader file head
+        run: |
+           echo "---- tasks/upload_sitemap.py (first 20 lines) ----"
+           sed -n '1,20p' tasks/upload_sitemap.py
 
       - name: Upload reports artifact
         if: always()
