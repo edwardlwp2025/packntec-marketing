@@ -1,28 +1,37 @@
-# tasks/sitemap_build.py
+from datetime import date
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
 from pathlib import Path
-from time import strftime
 
-URL_LIST = Path("reports/urls.txt")
-OUT = Path("reports/sitemap.xml")
+def prettify(elem):
+    """Return a pretty-printed XML string for the Element."""
+    rough = tostring(elem, encoding="utf-8")
+    reparsed = minidom.parseString(rough)
+    return reparsed.toprettyxml(indent="  ")
 
-def main():
-    urls = []
-    if URL_LIST.exists():
-        urls = [u.strip() for u in URL_LIST.read_text(encoding="utf-8").splitlines() if u.strip()]
-    if not urls:
-        urls = ["https://www.packntec.com/"]
+def build_sitemap():
+    today = date.today().isoformat()
+    urls = [
+        "https://www.packntec.com/",
+        "https://www.packntec.com/about-us",
+        "https://www.packntec.com/contact-us",
+        "https://www.packntec.com/products",
+        "https://www.packntec.com/blog",
+    ]
 
-    today = strftime("%Y-%m-%d")
-    items = "\n".join(
-        f"<url><loc>{u}</loc><lastmod>{today}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>"
-        for u in urls
-    )
-    xml = f'<?xml version="1.0" encoding="UTF-8"?>\n' \
-          f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{items}\n</urlset>\n'
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(xml, encoding="utf-8")
-    print(f"Wrote {OUT} with {len(urls)} URLs")
-    return 0
+    urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+
+    for loc in urls:
+        url = SubElement(urlset, "url")
+        SubElement(url, "loc").text = loc
+        SubElement(url, "lastmod").text = today
+        SubElement(url, "changefreq").text = "weekly"
+        SubElement(url, "priority").text = "0.7"
+
+    xml_str = prettify(urlset)
+    Path("reports").mkdir(exist_ok=True)
+    Path("reports/sitemap.xml").write_text(xml_str, encoding="utf-8")
+    print("✅ Sitemap built successfully!")
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    build_sitemap()
