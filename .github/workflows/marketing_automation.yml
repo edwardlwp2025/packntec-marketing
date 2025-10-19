@@ -27,7 +27,7 @@ jobs:
 
       - name: Upload sitemap via FTPS
         env:
-          FTP_HOST: ftp.packntec.com
+          FTP_HOST: 198.12.237.38
           FTP_PORT: 21
           FTP_USER: ftppublic@packntec.com
           FTP_PASS: ${{ secrets.FTP_PASS }}
