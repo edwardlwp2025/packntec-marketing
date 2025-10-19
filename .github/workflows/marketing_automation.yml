@@ -29,7 +29,7 @@ jobs:
         env:
           FTP_HOST: 198.12.237.38
           FTP_PORT: 21
-          FTP_USER: ftppublic@packntec.com
+          FTP_USER: marketing_automation@packntec.com
           FTP_PASS: ${{ secrets.FTP_PASS }}
           REMOTE_SITEMAP_PATH: /public_html/sitemap.xml
         run: python tasks/upload_sitemap_ftps.py
