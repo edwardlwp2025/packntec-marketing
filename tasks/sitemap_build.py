@@ -1,13 +1,6 @@
 from datetime import date
-from xml.etree.ElementTree import Element, SubElement, tostring
-from xml.dom import minidom
+from xml.etree.ElementTree import Element, SubElement, ElementTree
 from pathlib import Path
-
-def prettify(elem):
-    """Return a pretty-printed XML string for the Element."""
-    rough = tostring(elem, encoding="utf-8")
-    reparsed = minidom.parseString(rough)
-    return reparsed.toprettyxml(indent="  ")
 
 def build_sitemap():
     today = date.today().isoformat()
@@ -19,8 +12,8 @@ def build_sitemap():
         "https://www.packntec.com/blog",
     ]
 
+    # Build XML structure
     urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
-
     for loc in urls:
         url = SubElement(urlset, "url")
         SubElement(url, "loc").text = loc
@@ -28,10 +21,15 @@ def build_sitemap():
         SubElement(url, "changefreq").text = "weekly"
         SubElement(url, "priority").text = "0.7"
 
-    xml_str = prettify(urlset)
+    # Output file
     Path("reports").mkdir(exist_ok=True)
-    Path("reports/sitemap.xml").write_text(xml_str, encoding="utf-8")
-    print("✅ Sitemap built successfully!")
+    output_path = Path("reports/sitemap.xml")
+
+    # Write formatted XML
+    tree = ElementTree(urlset)
+    tree.write(output_path, encoding="utf-8", xml_declaration=True)
+
+    print(f"✅ Sitemap successfully written to {output_path}")
 
 if __name__ == "__main__":
     build_sitemap()
